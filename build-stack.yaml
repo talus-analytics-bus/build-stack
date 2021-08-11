@@ -47,7 +47,7 @@ Resources:
   # password checking on cloudfront requests
 
   # execution role for the lambda custom cloudfront resource
-  LambdaExecutionRole:
+  RandomStringExecutionRole:
     Type: AWS::IAM::Role
     Properties:
       AssumeRolePolicyDocument:
@@ -91,7 +91,7 @@ Resources:
           };
       Handler: index.handler
       Runtime: nodejs14.x
-      Role: !GetAtt LambdaExecutionRole.Arn
+      Role: !GetAtt RandomStringExecutionRole.Arn
       MemorySize: 128
       Timeout: 20
 
