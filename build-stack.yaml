@@ -105,6 +105,89 @@ Resources:
       Length: 16
       ServiceToken: !GetAtt RandomStringLambdaFunction.Arn
 
+  # Execution role for the basic auth lambda
+  AuthLambdaExecutionRole:
+    Type: "AWS::IAM::Role"
+    Properties:
+      AssumeRolePolicyDocument:
+        Version: "2012-10-17"
+        Statement:
+          - Effect: "Allow"
+            Principal:
+              Service:
+                - "lambda.amazonaws.com"
+                - "edgelambda.amazonaws.com"
+            Action:
+              - "sts:AssumeRole"
+      ManagedPolicyArns:
+        - "arn:aws:iam::aws:policy/CloudWatchLogsFullAccess"
+      Policies:
+        - PolicyName: allowLambdaLogging
+          PolicyDocument:
+            Version: "2012-10-17"
+            Statement:
+              - Effect: "Allow"
+                Action:
+                  - "logs:*"
+                Resource: "*"
+
+  BasicAuthLambda:
+    Type: "AWS::Lambda::Function"
+    Properties:
+      FunctionName: !Join ["-", [!Ref AWS::StackName, "basic-auth"]]
+      Role: !GetAtt AuthLambdaExecutionRole.Arn
+      Runtime: nodejs14.x
+      Handler: "index.handler"
+      MemorySize: 128
+      Timeout: 5
+      Code:
+        ZipFile: >
+          'use strict';
+          exports.handler = (event, context, callback) => {
+          const request = event.Records[0].cf.request;
+          const headers = request.headers;
+
+          console.log(event);
+          console.log(context);
+          console.log(callback);
+
+          const authUser = 'CovidPolicy';
+          const authPass = 'tr@ckeR645!';
+          const authCredentials = [
+              ['CovidPolicy', 'tr@ckeR645!'],
+              ['covid-local', 'covidTALUS_3454234']
+          ];
+
+          const authStrings = [];
+          authCredentials.forEach(d => {
+              authStrings.push(
+                  'Basic ' + new Buffer(d[0] + ':' + d[1]).toString('base64')
+              );
+          });
+
+
+          if (typeof headers.authorization == 'undefined' || !authStrings.includes(headers.authorization[0].value)) {
+              const body = 'Unauthorized';
+              const response = {
+                  status: '401',
+                  statusDescription: 'Unauthorized',
+                  body: body,
+                  headers: {
+                      'www-authenticate': [{key: 'WWW-Authenticate', value:'Basic'}]
+                  },
+              };
+              callback(null, response);
+          };
+
+          callback(null, request);
+          };
+
+  BasicAuthLambdaVersion:
+    Type: "AWS::Lambda::Version"
+    Properties:
+      Description: "1"
+      FunctionName: !Ref BasicAuthLambda
+
   ############ Dev site setup ############
   S3DevBucket:
     Type: AWS::S3::Bucket
@@ -181,6 +264,9 @@ Resources:
           ForwardedValues:
             QueryString: "true"
           ViewerProtocolPolicy: redirect-to-https
+          LambdaFunctionAssociations:
+            - EventType: "viewer-request"
+              LambdaFunctionARN: !Ref BasicAuthLambdaVersion
         PriceClass: PriceClass_100
         ViewerCertificate:
           AcmCertificateArn: !Ref CertificateArn
