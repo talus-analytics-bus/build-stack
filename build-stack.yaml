@@ -309,187 +309,187 @@ Resources:
           Type: A
 
   # ############ Staging site setup ############
-  # S3StagingBucket:
-  #   Type: AWS::S3::Bucket
-  #   Properties:
-  #     BucketName: !Join ["-", ["staging", !Ref AWS::StackName]]
-  #     WebsiteConfiguration:
-  #       ErrorDocument: index.html
-  #       IndexDocument: index.html
+  S3StagingBucket:
+    Type: AWS::S3::Bucket
+    Properties:
+      BucketName: !Join ["-", ["staging", !Ref AWS::StackName]]
+      WebsiteConfiguration:
+        ErrorDocument: index.html
+        IndexDocument: index.html
 
-  # S3StagingBucketPolicy:
-  #   Type: AWS::S3::BucketPolicy
-  #   Properties:
-  #     Bucket: !Join ["-", ["staging", !Ref AWS::StackName]]
-  #     PolicyDocument:
-  #       Id: MyPolicy
-  #       Version: 2012-10-17
-  #       Statement:
-  #         - Sid: PublicReadForGetBucketObjects
-  #           Effect: Allow
-  #           Principal: "*"
-  #           Action: s3:GetObject
-  #           Condition:
-  #             StringEquals:
-  #               "aws:Referer": !GetAtt ProjectInternalHeaderString.RandomString
-  #           Resource:
-  #             !Join [
-  #               "",
-  #               ["arn:aws:s3:::", "staging-", !Ref AWS::StackName, "/*"],
-  #             ]
+  S3StagingBucketPolicy:
+    Type: AWS::S3::BucketPolicy
+    Properties:
+      Bucket: !Join ["-", ["staging", !Ref AWS::StackName]]
+      PolicyDocument:
+        Id: MyPolicy
+        Version: 2012-10-17
+        Statement:
+          - Sid: PublicReadForGetBucketObjects
+            Effect: Allow
+            Principal: "*"
+            Action: s3:GetObject
+            Condition:
+              StringEquals:
+                "aws:Referer": !GetAtt ProjectInternalHeaderString.RandomString
+            Resource:
+              !Join [
+                "",
+                ["arn:aws:s3:::", "staging-", !Ref AWS::StackName, "/*"],
+              ]
 
-  # StagingDistribution:
-  #   Type: "AWS::CloudFront::Distribution"
-  #   Properties:
-  #     DistributionConfig:
-  #       Aliases:
-  #         - !If [
-  #             CustomDomainProvided,
-  #             !Join [".", ["staging", !Ref DomainName]],
-  #             !Join [
-  #               "",
-  #               ["staging-", !Ref AWS::StackName, ".", !Ref DomainName],
-  #             ],
-  #           ]
-  #       Origins:
-  #         - DomainName:
-  #             !Select [1, !Split ["//", !GetAtt S3StagingBucket.WebsiteURL]]
-  #           Id: myCustomOrigin
-  #           CustomOriginConfig:
-  #             HTTPPort: "80"
-  #             HTTPSPort: "443"
-  #             OriginProtocolPolicy: http-only
-  #           OriginCustomHeaders:
-  #             - HeaderName: "Referer"
-  #               HeaderValue: !GetAtt ProjectInternalHeaderString.RandomString
-  #       HttpVersion: http2
-  #       Enabled: "true"
-  #       DefaultRootObject: index.html
-  #       DefaultCacheBehavior:
-  #         AllowedMethods:
-  #           - GET
-  #           - HEAD
-  #         CachedMethods:
-  #           - GET
-  #           - HEAD
-  #         TargetOriginId: myCustomOrigin
-  #         SmoothStreaming: "false"
-  #         ForwardedValues:
-  #           QueryString: "true"
-  #         ViewerProtocolPolicy: redirect-to-https
-  #       PriceClass: PriceClass_100
-  #       ViewerCertificate:
-  #         AcmCertificateArn: !Ref CertificateArn
-  #         MinimumProtocolVersion: TLSv1.2_2018
-  #         SslSupportMethod: sni-only
+  StagingDistribution:
+    Type: "AWS::CloudFront::Distribution"
+    Properties:
+      DistributionConfig:
+        Aliases:
+          - !If [
+              CustomDomainProvided,
+              !Join [".", ["staging", !Ref DomainName]],
+              !Join [
+                "",
+                ["staging-", !Ref AWS::StackName, ".", !Ref DomainName],
+              ],
+            ]
+        Origins:
+          - DomainName:
+              !Select [1, !Split ["//", !GetAtt S3StagingBucket.WebsiteURL]]
+            Id: myCustomOrigin
+            CustomOriginConfig:
+              HTTPPort: "80"
+              HTTPSPort: "443"
+              OriginProtocolPolicy: http-only
+            OriginCustomHeaders:
+              - HeaderName: "Referer"
+                HeaderValue: !GetAtt ProjectInternalHeaderString.RandomString
+        HttpVersion: http2
+        Enabled: "true"
+        DefaultRootObject: index.html
+        DefaultCacheBehavior:
+          AllowedMethods:
+            - GET
+            - HEAD
+          CachedMethods:
+            - GET
+            - HEAD
+          TargetOriginId: myCustomOrigin
+          SmoothStreaming: "false"
+          ForwardedValues:
+            QueryString: "true"
+          ViewerProtocolPolicy: redirect-to-https
+        PriceClass: PriceClass_100
+        ViewerCertificate:
+          AcmCertificateArn: !Ref CertificateArn
+          MinimumProtocolVersion: TLSv1.2_2018
+          SslSupportMethod: sni-only
 
-  # Route53StagingRecord:
-  #   Type: AWS::Route53::RecordSetGroup
-  #   Properties:
-  #     # HostedZoneName must include a trailing dot
-  #     # https://docs.aws.amazon.com/AWSCloudFormation/latest/UserGuide/aws-properties-route53-recordset.html#cfn-route53-recordset-hostedzonename
-  #     HostedZoneName: !Join ["", [!Ref DomainName, "."]]
-  #     RecordSets:
-  #       - AliasTarget:
-  #           DNSName: !GetAtt StagingDistribution.DomainName
-  #           HostedZoneId: Z2FDTNDATAQYW2
-  #         Name:
-  #           !If [
-  #             CustomDomainProvided,
-  #             !Join [".", ["staging", !Ref DomainName]],
-  #             !Join [
-  #               "",
-  #               ["staging-", !Ref AWS::StackName, ".", !Ref DomainName],
-  #             ],
-  #           ]
-  #         Type: A
+  Route53StagingRecord:
+    Type: AWS::Route53::RecordSetGroup
+    Properties:
+      # HostedZoneName must include a trailing dot
+      # https://docs.aws.amazon.com/AWSCloudFormation/latest/UserGuide/aws-properties-route53-recordset.html#cfn-route53-recordset-hostedzonename
+      HostedZoneName: !Join ["", [!Ref DomainName, "."]]
+      RecordSets:
+        - AliasTarget:
+            DNSName: !GetAtt StagingDistribution.DomainName
+            HostedZoneId: Z2FDTNDATAQYW2
+          Name:
+            !If [
+              CustomDomainProvided,
+              !Join [".", ["staging", !Ref DomainName]],
+              !Join [
+                "",
+                ["staging-", !Ref AWS::StackName, ".", !Ref DomainName],
+              ],
+            ]
+          Type: A
 
-  # ############ Prod site setup ############
-  # S3ProdBucket:
-  #   Type: AWS::S3::Bucket
-  #   Properties:
-  #     BucketName: !Join ["-", ["prod", !Ref AWS::StackName]]
-  #     WebsiteConfiguration:
-  #       ErrorDocument: index.html
-  #       IndexDocument: index.html
+  ############ Prod site setup ############
+  S3ProdBucket:
+    Type: AWS::S3::Bucket
+    Properties:
+      BucketName: !Join ["-", ["prod", !Ref AWS::StackName]]
+      WebsiteConfiguration:
+        ErrorDocument: index.html
+        IndexDocument: index.html
 
-  # S3ProdBucketPolicy:
-  #   Type: AWS::S3::BucketPolicy
-  #   Properties:
-  #     Bucket: !Join ["-", ["prod", !Ref AWS::StackName]]
-  #     PolicyDocument:
-  #       Id: MyPolicy
-  #       Version: 2012-10-17
-  #       Statement:
-  #         - Sid: PublicReadForGetBucketObjects
-  #           Effect: Allow
-  #           Principal: "*"
-  #           Action: s3:GetObject
-  #           Condition:
-  #             StringEquals:
-  #               "aws:Referer": !GetAtt ProjectInternalHeaderString.RandomString
-  #           Resource:
-  #             !Join ["", ["arn:aws:s3:::", "prod-", !Ref AWS::StackName, "/*"]]
+  S3ProdBucketPolicy:
+    Type: AWS::S3::BucketPolicy
+    Properties:
+      Bucket: !Join ["-", ["prod", !Ref AWS::StackName]]
+      PolicyDocument:
+        Id: MyPolicy
+        Version: 2012-10-17
+        Statement:
+          - Sid: PublicReadForGetBucketObjects
+            Effect: Allow
+            Principal: "*"
+            Action: s3:GetObject
+            Condition:
+              StringEquals:
+                "aws:Referer": !GetAtt ProjectInternalHeaderString.RandomString
+            Resource:
+              !Join ["", ["arn:aws:s3:::", "prod-", !Ref AWS::StackName, "/*"]]
 
-  # ProdDistribution:
-  #   Type: "AWS::CloudFront::Distribution"
-  #   Properties:
-  #     DistributionConfig:
-  #       Aliases:
-  #         - !If [
-  #             CustomDomainProvided,
-  #             !Ref DomainName,
-  #             !Join ["", ["prod-", !Ref AWS::StackName, ".", !Ref DomainName]],
-  #           ]
-  #       Origins:
-  #         - DomainName:
-  #             !Select [1, !Split ["//", !GetAtt S3ProdBucket.WebsiteURL]]
-  #           Id: myCustomOrigin
-  #           CustomOriginConfig:
-  #             HTTPPort: "80"
-  #             HTTPSPort: "443"
-  #             OriginProtocolPolicy: http-only
-  #           OriginCustomHeaders:
-  #             - HeaderName: "Referer"
-  #               HeaderValue: !GetAtt ProjectInternalHeaderString.RandomString
-  #       HttpVersion: http2
-  #       Enabled: "true"
-  #       DefaultRootObject: index.html
-  #       DefaultCacheBehavior:
-  #         AllowedMethods:
-  #           - GET
-  #           - HEAD
-  #         CachedMethods:
-  #           - GET
-  #           - HEAD
-  #         TargetOriginId: myCustomOrigin
-  #         SmoothStreaming: "false"
-  #         ForwardedValues:
-  #           QueryString: "true"
-  #         ViewerProtocolPolicy: redirect-to-https
-  #       PriceClass: PriceClass_All
-  #       ViewerCertificate:
-  #         AcmCertificateArn: !Ref CertificateArn
-  #         MinimumProtocolVersion: TLSv1.2_2018
-  #         SslSupportMethod: sni-only
+  ProdDistribution:
+    Type: "AWS::CloudFront::Distribution"
+    Properties:
+      DistributionConfig:
+        Aliases:
+          - !If [
+              CustomDomainProvided,
+              !Ref DomainName,
+              !Join ["", ["prod-", !Ref AWS::StackName, ".", !Ref DomainName]],
+            ]
+        Origins:
+          - DomainName:
+              !Select [1, !Split ["//", !GetAtt S3ProdBucket.WebsiteURL]]
+            Id: myCustomOrigin
+            CustomOriginConfig:
+              HTTPPort: "80"
+              HTTPSPort: "443"
+              OriginProtocolPolicy: http-only
+            OriginCustomHeaders:
+              - HeaderName: "Referer"
+                HeaderValue: !GetAtt ProjectInternalHeaderString.RandomString
+        HttpVersion: http2
+        Enabled: "true"
+        DefaultRootObject: index.html
+        DefaultCacheBehavior:
+          AllowedMethods:
+            - GET
+            - HEAD
+          CachedMethods:
+            - GET
+            - HEAD
+          TargetOriginId: myCustomOrigin
+          SmoothStreaming: "false"
+          ForwardedValues:
+            QueryString: "true"
+          ViewerProtocolPolicy: redirect-to-https
+        PriceClass: PriceClass_All
+        ViewerCertificate:
+          AcmCertificateArn: !Ref CertificateArn
+          MinimumProtocolVersion: TLSv1.2_2018
+          SslSupportMethod: sni-only
 
-  # Route53ProdRecord:
-  #   Type: AWS::Route53::RecordSetGroup
-  #   Properties:
-  #     # HostedZoneName must include a trailing dot
-  #     # https://docs.aws.amazon.com/AWSCloudFormation/latest/UserGuide/aws-properties-route53-recordset.html#cfn-route53-recordset-hostedzonename
-  #     HostedZoneName: !Join ["", [!Ref DomainName, "."]]
-  #     RecordSets:
-  #       - AliasTarget:
-  #           DNSName: !GetAtt ProdDistribution.DomainName
-  #           HostedZoneId: Z2FDTNDATAQYW2
-  #         Name:
-  #           !If [
-  #             CustomDomainProvided,
-  #             !Ref DomainName,
-  #             !Join ["", ["prod-", !Ref AWS::StackName, ".", !Ref DomainName]],
-  #           ]
-  #         Type: A
+  Route53ProdRecord:
+    Type: AWS::Route53::RecordSetGroup
+    Properties:
+      # HostedZoneName must include a trailing dot
+      # https://docs.aws.amazon.com/AWSCloudFormation/latest/UserGuide/aws-properties-route53-recordset.html#cfn-route53-recordset-hostedzonename
+      HostedZoneName: !Join ["", [!Ref DomainName, "."]]
+      RecordSets:
+        - AliasTarget:
+            DNSName: !GetAtt ProdDistribution.DomainName
+            HostedZoneId: Z2FDTNDATAQYW2
+          Name:
+            !If [
+              CustomDomainProvided,
+              !Ref DomainName,
+              !Join ["", ["prod-", !Ref AWS::StackName, ".", !Ref DomainName]],
+            ]
+          Type: A
 
   # Execution role for the basic auth lambda
   AuthLambdaExecutionRole:
