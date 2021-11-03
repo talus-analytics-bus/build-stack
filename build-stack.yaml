@@ -6,6 +6,9 @@ AWSTemplateFormatVersion: 2010-09-09
 
 # the project name is automatically pulled from the
 # stack name given when invoking this template.
+
+# command to run build-stack:
+# aws cloudformation deploy --stack-name [projectname] --template-file build-stack.yaml --capabilities CAPABILITY_NAMED_IAM
 Parameters:
   DomainName:
     Type: String
