@@ -10,11 +10,12 @@ Parameters:
   DomainName:
     Type: String
     # Default: "covidvaccineteam.org"
-    Default: "ghsatlas.com"
+    Default: "talusanalytics.com"
   CertificateArn:
     Type: String
     # Default: "arn:aws:acm:us-east-1:560812044035:certificate/6e6a8e16-520e-4a15-bf4e-18cbd416be15"
-    Default: "arn:aws:acm:us-east-1:560812044035:certificate/de08d472-9d84-437b-b05b-6f3894be7dc5"
+    # Default: "arn:aws:acm:us-east-1:560812044035:certificate/de08d472-9d84-437b-b05b-6f3894be7dc5"
+    Default: "arn:aws:acm:us-east-1:560812044035:certificate/d98e831c-999b-4d94-8d09-5b8922f2fcb8"
 
 Conditions:
   # This conditional checks if the domain name is project-specific, or
@@ -38,7 +39,7 @@ Conditions:
   # aws cloudformation update-stack \
   #   --stack-name build-stack-test \
   #   --template-body file://build-stack.yaml
-  CustomDomainProvided: !Not [!Equals [!Ref DomainName, "ghsatlas.com"]]
+  CustomDomainProvided: !Not [!Equals [!Ref DomainName, "talusanalytics.com"]]
 
 Resources:
   # Using lambda to generate random string to use in headers between CF and S3
